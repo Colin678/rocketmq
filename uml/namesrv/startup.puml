@@ -1,0 +1,36 @@
+@startuml
+title NameSrvStartUp-NameSrv启动流程
+autonumber
+participant "main" as main
+participant "main0" as main0
+participant "createNamesrvController" as ctl
+
+
+activate main
+main->main0:调用main0
+activate main0
+main0->ctl:创建NameSrvCcontroller
+activate ctl
+ctl->ctl:初始化NameServerConfig
+ctl->ctl:从命令行获取一些命令
+ctl->ctl:初始化NettyServerConfig
+ctl->ctl:将配置全部放入NameSrvCtl中的Configuration
+ctl->main0:返回NqmeSrvCtl实例
+deactivate ctl
+main0->ctl:启动NameSrvCtl
+activate ctl
+ctl->ctl:将/${user.home}/namesrv/kvConfig.json的json放入nameSrv自己的configTable内存中
+ctl->ctl:例化一个nettyServer
+ctl->ctl:实例化了一个fixed线程池,将该线程池用于处理客户端的请求
+ctl->ctl:启动后5s开始每过10s钟扫面不活跃的broker
+ctl->ctl:启动后1s开始每过每10s中打印KVConfig中的所有kv
+ctl->main0
+main0->main0:增加一个shutdownhook
+main0->main
+deactivate ctl
+deactivate main0
+deactivate main
+
+
+
+@enduml

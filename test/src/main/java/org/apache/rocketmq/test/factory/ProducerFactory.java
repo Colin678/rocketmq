@@ -25,6 +25,7 @@ import org.apache.rocketmq.test.util.RandomUtil;
 public class ProducerFactory {
 
     public static DefaultMQProducer getRMQProducer(String ns) {
+        //  先 new 的一个MQProducer
         DefaultMQProducer producer = new DefaultMQProducer(RandomUtil.getStringByUUID());
         producer.setInstanceName(UUID.randomUUID().toString());
         producer.setNamesrvAddr(ns);

@@ -89,15 +89,14 @@ public class BrokerStartup {
 
     public static BrokerController createBrokerController(String[] args) {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-
+        //  没有发送与接收缓冲区大小值就赋予默认的值
         if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_SNDBUF_SIZE)) {
             NettySystemConfig.socketSndbufSize = 131072;
         }
-
         if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_RCVBUF_SIZE)) {
             NettySystemConfig.socketRcvbufSize = 131072;
         }
-
+        //  命令行参数，和nameServer启动是一样的
         try {
             //PackageConflictDetect.detectFastjson();
             Options options = ServerUtil.buildCommandlineOptions(new Options());
@@ -106,17 +105,22 @@ public class BrokerStartup {
             if (null == commandLine) {
                 System.exit(-1);
             }
-
+            //  broker的配置   注意这里的autoCreateTopicEnable，和Producer发送有联动
             final BrokerConfig brokerConfig = new BrokerConfig();
+            //  netty的配置，因为broker要给生产，消费端连接所以也是一个netty服务端
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+            //  需要连接nameSrv所以也是哥netty客户端
             final NettyClientConfig nettyClientConfig = new NettyClientConfig();
-
+            //  tls网络安全协议
             nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
                 String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
+            //  broker监听端口10911
             nettyServerConfig.setListenPort(10911);
+            //  消息存储的配置，例如存储的路径，存储文件的大小等
             final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
             if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
+                //  slaver的访问消息在内存中的最大比例少10，todo why
                 int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
             }
@@ -146,10 +150,11 @@ public class BrokerStartup {
                 System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MixAll.ROCKETMQ_HOME_ENV);
                 System.exit(-2);
             }
-
+            //  得倒nameSrv的地址
             String namesrvAddr = brokerConfig.getNamesrvAddr();
             if (null != namesrvAddr) {
                 try {
+                    //  这里是以分毫隔开来所有的nameSrv地址
                     String[] addrArray = namesrvAddr.split(";");
                     for (String addr : addrArray) {
                         RemotingUtil.string2SocketAddress(addr);
@@ -210,7 +215,7 @@ public class BrokerStartup {
             MixAll.printObjectProperties(log, nettyServerConfig);
             MixAll.printObjectProperties(log, nettyClientConfig);
             MixAll.printObjectProperties(log, messageStoreConfig);
-
+            //  根据所有的配置实例化一个brokerCtl
             final BrokerController controller = new BrokerController(
                 brokerConfig,
                 nettyServerConfig,
@@ -218,7 +223,7 @@ public class BrokerStartup {
                 messageStoreConfig);
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
-
+            //  和nameServer一样给ctl来一个init
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();

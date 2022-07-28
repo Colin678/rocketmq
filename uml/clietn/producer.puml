@@ -1,0 +1,49 @@
+@startuml
+title Producer启动流程
+autonumber
+participant "DefaultMQProducer" as default
+participant "DefaultMQProducerImpl" as defaultImpl
+'participant "MQClientManager" as manager
+participant "MQClientInstance" as instance
+
+activate default
+default->defaultImpl:调用启动函数 start()
+activate defaultImpl
+    defaultImpl->defaultImpl:检查当前对象生命周期阶段状态 非CREATE_JUST状态 直接抛异常
+    defaultImpl->defaultImpl:检查配置，checkConfig()实际上只检查了生产者组
+    defaultImpl->defaultImpl:检查实例的名字，没有传递名字过来就赋予当前PID
+    defaultImpl->instance:实例化MQClientInstance对象，通过静态的单例模式
+activate instance
+    instance->instance:根据clientConfig创建客户端id，config是所有客户端类的父类
+    instance->instance:往map里根据clientId取出MQClientInstance实例，取不出则创建mq客户端实例
+deactivate instance
+    defaultImpl->instance:clientInstance.registerProducer注册消息生产者
+activate instance
+    note right
+    背后是维护了一个producerTable，同理也有consumertable，adminTable
+    end note
+deactivate instance
+    defaultImpl->defaultImpl:注册完成后 生产者的启动成功，将启动状态标记为running
+    defaultImpl->defaultImpl:维护topic和topicPublishInfo的信息
+    defaultImpl->instance:启动客户端 client.start()
+    instance->instance:检查当前客户端的服务状态，不是create_just直接抛异常
+    activate instance
+        instance->instance:修改服务状态
+        instance->instance:lookup all nameSrv
+            note left
+            这个期间为将nameSrv的值放入MQAdminImpl里面
+            end note
+        instance->instance:启动netty client
+            note left
+            这个期间为将nameSrv的值放入MQAdminImpl里面
+            同时启动定时器去 扫描responseTable
+            启动client的所有线程池
+            1.计划线程池获取nameSrv的任务
+            2.计划线程池从nameSrv中更新topic的任务
+            3.计划线程池清除离线的broker的任务
+            end note
+            instance->instance:启动netty client
+deactivate instance
+deactivate defaultImpl
+deactivate default
+@enduml

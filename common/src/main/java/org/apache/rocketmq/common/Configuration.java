@@ -33,11 +33,16 @@ public class Configuration {
     private final InternalLogger log;
 
     private List<Object> configObjectList = new ArrayList<Object>(4);
+    //  存储目录
     private String storePath;
     private boolean storePathFromConfig = false;
+    //  存储目录的对象
     private Object storePathObject;
+    //  存储目录的字段
     private Field storePathField;
+    //  数据版本
     private DataVersion dataVersion = new DataVersion();
+    //  读写锁
     private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     /**
      * All properties include configs in object and extend properties.
@@ -48,12 +53,21 @@ public class Configuration {
         this.log = log;
     }
 
+    /**
+     *
+     * @author ouyangzhaobing
+     * @date 2021/10/8 下午4:06
+     * @param log
+     * @param configObjects 需要注册的对象
+     * @return null
+     */
     public Configuration(InternalLogger log, Object... configObjects) {
         this.log = log;
         if (configObjects == null || configObjects.length == 0) {
             return;
         }
         for (Object configObject : configObjects) {
+            //  循环将对象注册进来
             registerConfig(configObject);
         }
     }
@@ -70,16 +84,18 @@ public class Configuration {
      */
     public Configuration registerConfig(Object configObject) {
         try {
+            //  拿到写锁
             readWriteLock.writeLock().lockInterruptibly();
 
             try {
-
+                //  将对象转换成properties
                 Properties registerProps = MixAll.object2Properties(configObject);
-
+                //  将得倒的对象properties放入全局变量allConfigs里面去
                 merge(registerProps, this.allConfigs);
-
+                //  将原始的配置对象放到全局变量configObjectList中
                 configObjectList.add(configObject);
             } finally {
+                //  释放写锁
                 readWriteLock.writeLock().unlock();
             }
         } catch (InterruptedException e) {

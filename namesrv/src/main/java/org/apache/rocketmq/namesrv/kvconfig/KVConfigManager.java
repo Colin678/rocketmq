@@ -44,14 +44,17 @@ public class KVConfigManager {
     public void load() {
         String content = null;
         try {
+            //  NameServerConfig全局变量已赋值 ->  getKvConfigPath
             content = MixAll.file2String(this.namesrvController.getNamesrvConfig().getKvConfigPath());
         } catch (IOException e) {
             log.warn("Load KV config table exception", e);
         }
         if (content != null) {
+            //  将/Users/colin569/namesrv/kvConfig.json的json转为一个包装类
             KVConfigSerializeWrapper kvConfigSerializeWrapper =
                 KVConfigSerializeWrapper.fromJson(content, KVConfigSerializeWrapper.class);
             if (null != kvConfigSerializeWrapper) {
+                //  将文件放入nameSrv自己的configTable内存中
                 this.configTable.putAll(kvConfigSerializeWrapper.getConfigTable());
                 log.info("load KV config table OK");
             }

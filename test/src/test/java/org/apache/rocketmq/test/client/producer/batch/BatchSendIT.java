@@ -55,7 +55,7 @@ public class BatchSendIT extends BaseConf {
         List<Message> messageList = new ArrayList<>();
         int batchNum = 100;
         for (int i = 0; i < batchNum; i++) {
-            messageList.add(new Message(topic, RandomUtils.getStringByUUID().getBytes()));
+            messageList.add(new Message(topic, "我柿你叠哦".getBytes()));
         }
 
         DefaultMQProducer producer = ProducerFactory.getRMQProducer(nsAddr);

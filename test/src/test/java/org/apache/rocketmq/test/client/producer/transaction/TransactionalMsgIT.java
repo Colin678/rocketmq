@@ -105,6 +105,7 @@ public class TransactionalMsgIT extends BaseConf {
 
         @Override
         public LocalTransactionState checkLocalTransaction(MessageExt msg) {
+            String keys = msg.getKeys();
             LocalTransactionState state = checkStatus.get(msg.getTransactionId());
             if (state == null) {
                 return LocalTransactionState.UNKNOW;

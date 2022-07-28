@@ -54,7 +54,9 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
+            //  初始化NameServer
             NamesrvController controller = createNamesrvController(args);
+            //  启动namesrvcontroller
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
@@ -69,25 +71,32 @@ public class NamesrvStartup {
     }
 
     public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
+        //  设置rocketmq.remoting.version的版本号
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
         //PackageConflictDetect.detectFastjson();
 
+        //  一些命令界面提示
         Options options = ServerUtil.buildCommandlineOptions(new Options());
         commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
         if (null == commandLine) {
+            //  参数状态码表示异常退出
             System.exit(-1);
             return null;
         }
-
+        //  实例namesrv配置
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
+        //  netty服务端配置，work线程数，boss线程数，发送接收缓冲区大小等
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+        //  设置监听接口为9876
         nettyServerConfig.setListenPort(9876);
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
+                //  拿到输入流
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
                 properties = new Properties();
                 properties.load(in);
+                //  很熟悉的方法将配置，将第一个参数的映射到第二个参数上
                 MixAll.properties2Object(properties, namesrvConfig);
                 MixAll.properties2Object(properties, nettyServerConfig);
 
@@ -122,10 +131,12 @@ public class NamesrvStartup {
 
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
-
+        //  实例化一个namesrvcontroller 将namesrv和nettySrv的配置传入。可知这个controller大概会是一个tcpserver服务
+        //  最后实例化了NettyRemotingServer这个netty服务端
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard
+        //  将从命令行输入的配置放到controller的Configuration去，configuration类中有一个allConfigs全局变量，所有的配置都在其中
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
@@ -136,7 +147,7 @@ public class NamesrvStartup {
         if (null == controller) {
             throw new IllegalArgumentException("NamesrvController is null");
         }
-
+        //  初始化controller
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();

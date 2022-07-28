@@ -74,16 +74,16 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
-
+        //  将/Users/colin569/namesrv/kvConfig.json的json放入nameSrv自己的configTable内存中
         this.kvConfigManager.load();
-
+        //  实例化一个nettySrv
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
-
+        //  实例化了一个fixed线程池
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
-
+        //  将该线程池👆用于处理客户端的请求
         this.registerProcessor();
-
+        //  每10s钟扫面不活跃的broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -91,7 +91,7 @@ public class NamesrvController {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
-
+        //  每10s中打印KVConfig中的所有kv
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

@@ -1,0 +1,52 @@
+@startuml
+title BrokerStartUp-Broker启动流程
+autonumber
+participant "main" as main
+participant "createCtl" as ctl
+participant "initialize" as initialize
+participant "startBrokerController" as start
+participant "registerBrokerAll" as register
+
+
+activate main
+main->ctl:和NameServer类似创建broker的控制器
+activate ctl
+ctl->ctl:实例化BrokerConfig配置
+note left: BrokerConfig配置中有NameSrv的地址
+ctl->ctl:实例化nettyServerConfig配置
+note left: broker需要与生产者和消费者通信
+ctl->ctl:实例化nettyClientConfig配置
+note left: broker需要与nameSrv通信
+ctl->ctl:实例化MessageStore消息存储的配置
+note left: 消息存储的配置，例如存储的路径，commitlog，consumerQueue文件的大小等
+alt 根据MessageStoreConfig获取Broker的Role是否等于slave
+    ctl->ctl:slaver的访问消息在内存中的最大比例少10，todo why
+end
+ctl->ctl:命令行转配置
+ctl->initialize:初始化ctl
+deactivate ctl
+activate initialize
+initialize->initialize:加载topic的管理，从 /${user.home}/store/config/topics.json下的文件内容转换为一个topic的包装内放入内存
+initialize->initialize:加载consumerOffset消费偏移量管理 ，/Users/colin569/store/config/consumerOffset.json
+initialize->initialize:加载subscriptionGroup订阅组管理，目录同上
+initialize->initialize:加载consumerOffset消费偏移量管理，目录同上
+initialize->initialize:实例化messageStore
+note left:加载scheduleMessageService，加载commitlog，loadConsumeQueue，初始化存储检查点
+initialize->initialize:初始化nettyServer
+initialize->initialize:初始化发送消息的线程池，线程池配置从brokerconfig中拿
+initialize->initialize:初始化拉取消息的线程池，线程池配置从brokerconfig中拿
+initialize->initialize:初始化应答，查询消息，客户端管理，心跳，消费者管理的线程池
+initialize->initialize:开启计划线程池做好对broker的检查
+main->start:开启ctl中的nettyServer，messageStore等各种服务
+deactivate initialize
+activate start
+loop    开启计划线程池定时，延时10s 定时30s，registerBrokerAll
+start->register:注册broker信息
+activate register
+register->register:得倒topic的包装类
+register->register:将broker的Id，name，addr，clustername等放入请求头，topic信息放入请求体
+end
+deactivate register
+deactivate start
+deactivate main
+@enduml

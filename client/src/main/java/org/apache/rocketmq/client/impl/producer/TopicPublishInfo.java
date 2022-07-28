@@ -84,8 +84,14 @@ public class TopicPublishInfo {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public MessageQueue selectOneMessageQueue() {
+        //  随便拿到一个数，线程内递增的
         int index = this.sendWhichQueue.getAndIncrement();
+        //  取模函数
         int pos = Math.abs(index) % this.messageQueueList.size();
         if (pos < 0)
             pos = 0;

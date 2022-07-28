@@ -99,6 +99,7 @@ public class ClientConfig {
     }
 
     public String withNamespace(String resource) {
+        //  把生产者指定的生产者组包装成一个
         return NamespaceUtil.wrapNamespace(this.getNamespace(), resource);
     }
 
@@ -280,6 +281,7 @@ public class ClientConfig {
 
         if (StringUtils.isNotEmpty(this.namesrvAddr)) {
             if (NameServerAddressUtils.validateInstanceEndpoint(namesrvAddr)) {
+
                 return NameServerAddressUtils.parseInstanceIdFromEndpoint(namesrvAddr);
             }
         }
